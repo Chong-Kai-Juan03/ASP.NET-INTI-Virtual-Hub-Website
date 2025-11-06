@@ -1,0 +1,183 @@
+@{
+    ViewData["Title"] = "Edit Profile";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Content {
+    <!-- Header Section -->
+    <div class="mb-4 header-section">
+        <h1 class="mb-1">Edit Profile</h1>
+        <p class="subtitle text-muted">Manage your profile information and account settings</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row g-0">
+        <div class="col-12">
+
+
+            <!-- Profile Form Card -->
+            <div class="dashboard-card w-100">
+                <div class="card-body p-4 p-lg-5">
+                    <form id="editProfileForm" method="post" asp-action="EditProfile" autocomplete="off">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row">
+                            <!-- Left Column -->
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label d-flex align-items-center">
+                                        <i class="bi bi-person-fill me-2 text-primary"></i> Full Name
+                                    </label>
+                                    <input type="text" class="form-control" name="Name" value="@(Model?.Name ?? "")" required>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label d-flex align-items-center">
+                                        <i class="bi bi-telephone-fill me-2 text-primary"></i> Phone Number
+                                    </label>
+                                    <input type="tel" class="form-control" name="Phone" value="@(Model?.Phone ?? "")" required>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label d-flex align-items-center">
+                                        <i class="bi bi-envelope-fill me-2 text-primary"></i> Email Address
+                                    </label>
+                                    <input type="email" class="form-control" name="Email" value="@(Model?.Email ?? "")" required>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label d-flex align-items-center">
+                                        <i class="bi bi-shield-fill me-2 text-primary"></i> Role
+                                    </label>
+                                    <input type="text" class="form-control" value="@(Model?.Role ?? "")" disabled>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Buttons -->
+                        <div class="d-flex justify-content-end gap-3 mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+
+                            <!-- Save button with spinner + text -->
+                            <button id="saveBtn" type="submit" class="btn btn-primary">
+                                <span class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+                                <span class="btn-text">Save Changes</span>
+                            </button>
+                        </div>
+
+                        <!-- Alert placeholder -->
+                        <div id="editMsg" class="alert d-none mt-3" role="alert"></div>
+
+
+                    </form>
+                </div>
+            </div>
+
+
+            <div class="alert mt-4 border-0 rounded-3 p-4"
+                 style="background-color: #e3f2fd; border-left: 4px solid #5aaefc;">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-info-circle-fill me-3 fs-4" style="color: #5aaefc;"></i>
+                    <div>
+                        <h5 class="alert-heading mb-3" style="color: #0d6efd;">Profile Information</h5>
+                        <p class="mb-3" style="color: #212529;">
+                            Keep your profile information up to date to ensure proper access and communication
+                            within the INTI Virtual Hub system.
+                        </p>
+                        <ul class="mb-0 ps-3" style="color: #212529;">
+                            <li>Changes to your role may require administrator approval</li>
+                            <li>Email address is used for system notifications</li>
+                            <li>Phone number is used for emergency contacts</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+          // Only run if the element exists
+          const profileImg = document.getElementById('profileImage');
+          if (profileImg) {
+            const role = '@(Model?.Role ?? "")';
+            profileImg.src = role === 'Admin' ? '/uploads/admin.jpg' : '/uploads/staff.jpg';
+          }
+
+          // If you previously had code touching the sidebar setting PNG, disable it.
+          // For example, if you had:
+          // const settingIcon = document.querySelector('.sidebar-setting-icon');
+          // if (settingIcon) settingIcon.src = '/uploads/Setting_Icon.png';
+          // Now that you're using <i class="bi ..."> instead of <img>, REMOVE that code or keep this guard.
+        });
+
+
+
+
+        document.getElementById('editProfileForm').addEventListener('submit', async function (e) {
+          e.preventDefault();
+
+          const form    = e.target;
+          const saveBtn = document.getElementById('saveBtn');
+          const spinner = saveBtn.querySelector('.spinner-border');
+          const btnTxt  = saveBtn.querySelector('.btn-text');
+          const msgBox  = document.getElementById('editMsg');
+
+          // UI: start loading
+          spinner.classList.remove('d-none');
+          btnTxt.textContent = 'Saving...';
+          saveBtn.disabled = true;
+
+          // serialize form (includes antiforgery hidden input)
+          const data = new URLSearchParams(new FormData(form));
+
+          let result = { success: false, message: 'Unexpected response.' };
+          try {
+            const res = await fetch('/Home/EditProfile', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              body: data
+            });
+
+            // Try to parse JSON; handle non-JSON gracefully
+            result = await res.json().catch(() => result);
+          } catch (err) {
+            result = { success: false, message: err?.message || 'Network error.' };
+          }
+
+          // UI: stop loading
+          spinner.classList.add('d-none');
+          btnTxt.textContent = 'Save Changes';
+          saveBtn.disabled = false;
+
+          // Show message
+          msgBox.classList.remove('d-none', 'alert-success', 'alert-danger', 'fade', 'show');
+          msgBox.classList.add('alert', result.success ? 'alert-success' : 'alert-danger', 'fade', 'show');
+          msgBox.textContent = result.success ? 'Profile updated.' : (result.message || 'Failed to save changes.');
+
+          // Optional: auto-hide after 3 seconds
+          clearTimeout(window.__editMsgTimer);
+          window.__editMsgTimer = setTimeout(() => {
+            msgBox.classList.remove('show');
+            setTimeout(() => msgBox.classList.add('d-none'), 150); // wait for fade
+          }, 3000);
+
+          // Optional: scroll it into view on small screens
+          msgBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+
+    </script>
+}

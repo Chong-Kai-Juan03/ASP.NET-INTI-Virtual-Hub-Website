@@ -1,59 +1,112 @@
+﻿using System;
+using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using DotNetEnv;
-using CloudinaryDotNet;
-using Firebase.Database;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using Amazon.S3;
 using firstconnectfirebase.Services;
-
-// 加载环境变量（优先从.env文件读取）
-Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-/* ========== 服务配置 ========== */
-// Cloudinary 配置（建议改为从环境变量读取）
-var cloudinaryAccount = new Account(
-    Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME") ?? "dhm7z5t7r",
-    Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY") ?? "356935324743282",
-    Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET") ?? "s5_N9-9NcQUPYOWhySQaF8sfOOM"
-);
-builder.Services.AddSingleton(new Cloudinary(cloudinaryAccount));
+// Load .env only on dev
+if (builder.Environment.IsDevelopment())
+{
+    try { Env.Load(); } catch { /* ignore if .env not present */ }
+}
 
-// Firebase 配置（强制验证配置）
-var firebaseUrl = builder.Configuration["Firebase:DatabaseUrl"]
-    ?? throw new Exception("缺少 Firebase:DatabaseUrl 配置");
-var firebaseSecret = builder.Configuration["Firebase:Secret"]
-    ?? throw new Exception("缺少 Firebase:Secret 配置");
-
-builder.Services.AddSingleton<FirebaseClient>(_ => new FirebaseClient(
-    firebaseUrl,
-    new FirebaseOptions
-    {
-        AuthTokenAsyncFactory = () => Task.FromResult(firebaseSecret)
-    }));
-
-// 应用服务
-builder.Services.AddScoped<FirebaseService>();
-
-
+// MVC + HTTP facilities
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
 
-/* ========== 中间件配置 ========== */
+// Session cookie hardened for Azure
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(2);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
+// Trust Azure proxy (prevents HTTPS redirect loops)
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
+
+/* -------- Firebase Admin SDK (env/app settings only; no local files) -------- */
+var fbB64 = builder.Configuration["FIREBASE_CONFIG_B64"];
+var fbJson = builder.Configuration["FIREBASE_CONFIG_JSON"];
+if (FirebaseApp.DefaultInstance == null)
+{
+    if (!string.IsNullOrWhiteSpace(fbB64))
+    {
+        var json = Encoding.UTF8.GetString(Convert.FromBase64String(fbB64));
+        FirebaseApp.Create(new AppOptions { Credential = GoogleCredential.FromJson(json) });
+    }
+    else if (!string.IsNullOrWhiteSpace(fbJson))
+    {
+        FirebaseApp.Create(new AppOptions { Credential = GoogleCredential.FromJson(fbJson) });
+    }
+    // else: skip; REST auth via Web API key still works
+}
+/* --------------------------------------------------------------------------- */
+
+
+// (Optional) if some controllers still inject FirebaseService concrete type:
+builder.Services.AddScoped<FirebaseService, FirebaseService>();
+
+/* ------------------------ Conditional AWS S3 registration ------------------- */
+// Read both ":" and "__" forms for compatibility with Azure/.env
+string awsKey = builder.Configuration["AWS:AccessKey"] ?? builder.Configuration["AWS__AccessKey"];
+string awsSecret = builder.Configuration["AWS:SecretKey"] ?? builder.Configuration["AWS__SecretKey"];
+string awsRegion = builder.Configuration["AWS:Region"] ?? builder.Configuration["AWS__Region"];
+string awsBucket = builder.Configuration["AWS:BucketName"] ?? builder.Configuration["AWS__BucketName"];
+
+bool hasS3 = !string.IsNullOrWhiteSpace(awsKey)
+          && !string.IsNullOrWhiteSpace(awsSecret)
+          && !string.IsNullOrWhiteSpace(awsRegion)
+          && !string.IsNullOrWhiteSpace(awsBucket);
+
+if (hasS3)
+{
+    builder.Services.AddSingleton<IAmazonS3>(_ =>
+        new AmazonS3Client(awsKey, awsSecret, Amazon.RegionEndpoint.GetBySystemName(awsRegion)));
+    builder.Services.AddSingleton<S3Service>();
+}
+/* --------------------------------------------------------------------------- */
+
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-}
-else
+if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
+app.UseSession();
 
+// Health & config probes (no secrets)
+app.MapGet("/healthz", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
+app.MapGet("/configz", (IConfiguration cfg) => Results.Ok(new
+{
+    hasWebApiKey = !string.IsNullOrWhiteSpace(cfg["Firebase:WebApiKey"]) || !string.IsNullOrWhiteSpace(cfg["Firebase__WebApiKey"]),
+    hasDbUrl = !string.IsNullOrWhiteSpace(cfg["Firebase:DatabaseUrl"]) || !string.IsNullOrWhiteSpace(cfg["Firebase__DatabaseUrl"]),
+    adminReady = FirebaseApp.DefaultInstance != null,
+    hasS3 = hasS3
+}));
+
+
+
+// Let Home/Index decide: if no session → it redirects to /Auth/Login
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

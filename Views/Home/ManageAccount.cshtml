@@ -1,0 +1,146 @@
+﻿@{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+@section Content {
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h1 class="mb-2">Manage User Account</h1>
+                <p class="subtitle text-muted mb-0">Create or remove staff and admin accounts to maintain secure system access.</p>
+            </div>
+            <button class="btn btn-primary" onclick="showCreateAccount()">
+                <i class="bi bi-plus-circle me-2"></i>Create Account
+            </button>
+        </div>
+
+        <!-- Tables here -->
+        <div id="staffTable"></div>
+        <div class="section-gap"></div>
+        <div id="adminTable"></div>
+    </div>
+
+
+    <!-- Create Account Modal -->
+    <div id="createAccountModal" class="modal-bg" style="display:none;">
+        <div class="modal-card">
+            <h3 style="margin-bottom:18px;">Create Account</h3>
+            <form id="createAccountForm">
+                <label>Name</label>
+                <input type="text" name="name" required />
+                <label>Phone</label>
+                <input type="text" name="phone" required />
+                <label>Email</label>
+                <input type="email" name="email" required />
+                <label>Password</label>
+                <input type="password" name="password" required />
+                <label>Role</label>
+                <select name="role" required>
+                    <option value="">Select Role</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Staff">Staff</option>
+                </select>
+                <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:18px;">
+                    <button type="button" onclick="hideCreateAccount()" class="cancel-btn">Cancel</button>
+                    <button type="submit" class="create-btn">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+@section Scripts {
+    <script>
+
+        let currentUserId = null;
+
+        async function loadUsers() {
+            const res = await fetch('/Home/GetAllUsers');
+            const users = await res.json();
+            const myUid = '@Context.Session.GetString("UserUid")';
+            currentUserId = myUid;
+            const staff = [], admin = [];
+            for (const uid in users) {
+                const u = users[uid];
+                u.uid = uid;
+                if (u.role === 'Admin') admin.push(u);
+                else staff.push(u);
+            }
+            renderTable('Staff', staff, myUid, 'staffTable');
+            renderTable('Admin', admin, myUid, 'adminTable');
+        }
+
+        function renderTable(title, data, myUid, containerId) {
+            let html = `<div class='account-table'><div class='account-table-title'>${title}</div><table><thead><tr><th></th><th>Name</th><th>Role</th><th>Phone</th><th>Email</th><th></th></tr></thead><tbody>`;
+
+            if (data.length === 0) {
+                html += `<tr><td colspan="6" style="text-align:center; padding: 24px; font-style: italic; color: #888;">
+                            ${title === 'Staff' ? 'There is no staff registered.' : 'There is no admin registered.'}
+                         </td></tr>`;
+            } else {
+                for (const u of data) {
+                    html += `<tr>
+                                <td><img class='avatar' src='/uploads/avatar${(u.role === 'Admin' ? 1 : 2)}.png' /></td>
+                                <td>${u.name || ''}</td>
+                                <td>${u.role || ''}</td>
+                                <td>${u.phone || ''}</td>
+                                <td>${u.email || ''}</td>
+                                <td>`;
+
+                    const isSelf = u.uid === myUid;
+                    const isAdminTable = title === 'Admin';
+
+                    if (!isSelf) {
+                        html += `<button class='delete-btn' onclick="deleteAccount('${u.uid}')">Delete</button>`;
+                    }
+
+
+                    html += `</td></tr>`;
+                }
+            }
+
+            html += `</tbody></table></div>`;
+            document.getElementById(containerId).innerHTML = html;
+        }
+
+
+        function showCreateAccount() {
+            document.getElementById('createAccountModal').style.display = 'flex';
+        }
+
+        function hideCreateAccount() {
+            document.getElementById('createAccountModal').style.display = 'none';
+            document.getElementById('createAccountForm').reset();
+        }
+        document.getElementById('createAccountForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const data = new URLSearchParams(new FormData(form));
+            const res = await fetch('/Home/CreateAccount', { method: 'POST', body: data });
+            const result = await res.json();
+            if (result.success) {
+                alert('Account created successfully!');
+                hideCreateAccount();
+                loadUsers();
+            } else {
+                alert(result.message || 'Failed to create account.');
+            }
+        });
+        async function deleteAccount(uid) {
+            if (!confirm('Are you sure you want to delete this account?')) return;
+            const res = await fetch('/Home/DeleteAccount', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `uid=${uid}` });
+            const result = await res.json();
+            if (result.success) {
+                alert('Account deleted successfully!');
+                loadUsers();
+            } else {
+                alert(result.message || 'Failed to delete account.');
+            }
+        }
+
+        // JS SHA256 for user hash
+        function generateUserHash(uid) {
+            return uid;
+        }
+        loadUsers();
+
+    </script>
+}

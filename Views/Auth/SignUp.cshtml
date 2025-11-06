@@ -1,0 +1,115 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up - INTI Virtual Hub</title>
+    <link rel="stylesheet" href="/css/login.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .input-style {
+            width: 100%;
+            padding: 10px 8px;
+            margin-bottom: 24px;
+            border: none;
+            border-bottom: 1px solid #ccc;
+            font-size: 1rem;
+            background: transparent;
+            outline: none;
+        }
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper input[type="password"],
+        .password-wrapper input[type="text"] {
+            width: 100%;
+            padding: 10px 8px;
+            margin-bottom: 24px;
+            border: none;
+            border-bottom: 1px solid #ccc;
+            font-size: 1rem;
+            background: transparent;
+            outline: none;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <img src="/uploads/inti360-logo.png" alt="INTI 360 Logo" class="login-logo" />
+        </div>
+        <div class="login-right">
+            <h1>Sign Up</h1>
+            <p class="welcome">Create your account to get started.</p>
+            <form method="post" id="signupForm">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required autocomplete="username" class="input-style" />
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" required autocomplete="new-password" class="input-style" />
+                    <span class="toggle-password" onclick="togglePassword()">
+                        <svg width="20" height="20" fill="none" stroke="#888" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </span>
+                </div>
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required autocomplete="name" class="input-style" />
+                <label for="phone">Phone Number</label>
+                <input type="text" id="phone" name="phone" required autocomplete="tel" class="input-style" />
+                <label for="role">Role</label>
+                <select id="role" name="role" required class="input-style">
+                    <option value="">Select Role</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Staff">Staff</option>
+                </select>
+                <div class="options-row">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="terms" required />
+                        <span class="checkmark"></span>
+                        Terms & Conditions
+                    </label>
+                </div>
+                <button type="submit" class="login-btn">Sign Up</button>
+            </form>
+            <div class="signup-row">
+                Already have an account? <a href="/Auth/Login">Log in</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        function togglePassword() {
+            var pwd = document.getElementById('password');
+            pwd.type = pwd.type === 'password' ? 'text' : 'password';
+        }
+
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const data = new URLSearchParams(new FormData(form));
+            const res = await fetch('/Auth/SignUp', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: data
+            });
+            const result = await res.json();
+            if (result.success) {
+                alert(result.message);
+                window.location.href = '/Auth/Login';
+            } else {
+                alert(result.message);
+            }
+        });
+    </script>
+</body>
+</html> 

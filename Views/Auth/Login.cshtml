@@ -1,0 +1,128 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - INTI Virtual Hub</title>
+    <link rel="stylesheet" href="/css/login.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <img src="/uploads/INTIHUBLOGO.png" alt="INTI 360 Logo" class="login-logo" />
+        </div>
+        <div class="login-right">
+            <h1>INTI Virtual Hub</h1>
+            <p class="welcome">Welcome back! Please enter your details.</p>
+            <form method="post" id="loginForm">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required autocomplete="username" />
+
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" required autocomplete="current-password" />
+                    <i class="toggle-password fa-solid fa-eye" onclick="togglePasswordVisibility()" tabindex="0"></i>
+                </div>
+                
+                <div class="options-row">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="terms" required />
+                        <span class="checkmark"></span>
+                        Terms & Conditions
+                    </label>
+                </div>
+                @if (ViewBag.Error != null)
+                {
+                    <p style="color:red">@ViewBag.Error</p>
+                }
+                <button type="submit" class="login-btn">Log in</button>
+            </form>
+
+            <div class="signup-row">
+                Forget your account password? <a href="/Auth/ForgotPassword">Forgot Password</a>
+            </div>
+        </div>
+    </div>
+
+<script>
+    (() => {
+        const form = document.getElementById('loginForm');
+        const email = document.getElementById('email');
+        const pass  = document.getElementById('password');
+        const btn   = form?.querySelector('button[type="submit"]');
+
+        const spinner = document.createElement('span');
+        spinner.classList.add('spinner');
+        spinner.style.display = 'none';
+        spinner.style.marginLeft = '8px';
+        btn?.appendChild(spinner);
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!btn) return;
+
+            // Disable button & show loading
+            btn.disabled = true;
+            const originalText = btn.textContent;
+            btn.textContent = 'Logging in...';
+            spinner.style.display = 'inline-block';
+
+            try {
+                const res  = await fetch('/Auth/LoginAjax', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ email: (email?.value || '').trim(), password: pass?.value || '' })
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    alert('Unexpected server response.');
+                    return;
+                }
+
+                if (res.ok && data.success) {
+                    const target = data.redirect || '/Home/Index';
+                    window.location.replace(target);  // don’t keep login in history
+                } else {
+                    alert(data.message || 'Login failed. Check your email or password.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error. Please try again.');
+            } finally {
+                // Restore button state
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btn.textContent = originalText;
+            }
+        });
+    })();
+
+    function togglePasswordVisibility() {
+        const passwordField = document.getElementById("password");
+        const icon = document.querySelector(".toggle-password");
+
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            icon.classList.remove("fa-eye");
+            icon.classList.add("fa-eye-slash");
+        } else {
+            passwordField.type = "password";
+            icon.classList.remove("fa-eye-slash");
+            icon.classList.add("fa-eye");
+        }
+    }
+</script>
+
+</body>
+
+</html>

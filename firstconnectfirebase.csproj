@@ -10,10 +10,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Configs\firebase-adminsdk.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Configs\firebase-adminsdk.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="4.0.6.4" />
     <PackageReference Include="CloudinaryDotNet" Version="1.21.0" />
     <PackageReference Include="dotenv.net" Version="3.1.2" />
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
-    <PackageReference Include="FirebaseAdmin" Version="3.0.0" />
+    <PackageReference Include="FirebaseAdmin" Version="3.3.0" />
     <PackageReference Include="FirebaseDatabase.net" Version="5.0.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />

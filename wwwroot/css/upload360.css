@@ -44,12 +44,12 @@
 .btn-outline-primary, .btn-outline-success, .btn-outline-danger {
     transition: all 0.2s;
     /* Add these styles to your existing CSS */
-    #scenePreviewContainer
-    transition: all 0.3s ease;
-}
+    #scenePreviewContainer {
+        transition: all 0.3s ease;
+    }
 
-#scenePreview {
-    max-width: 100%;
+    #scenePreview {
+        max-width: 100%;
     border: 1px solid #ddd;
     border-radius: 4px;
 }
@@ -58,5 +58,5 @@
     margin-bottom: 15px;
 }
 
-/* Existing styles... */
+
 }

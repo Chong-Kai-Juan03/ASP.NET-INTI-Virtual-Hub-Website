@@ -1,8 +1,195 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@section Content {
+    <!-- Header Section -->
+    <div class="mb-4 header-section">
+        <h1 class="mb-2">Dashboard Overview</h1>
+        <p class="subtitle text-muted">Monitor your activity trends, review personal details, and track overall system performance.</p>
+    </div>
+        <div class="dashboard-row top-row">
+
+            <!--Left side Random Scene Card-->
+            <div class="dashboard-card pictures-card">
+                <div class="card-header">
+                    <span>360 Pictures</span>
+                <a href="/Scene/Manage360" class="view-all">View All</a>
+                </div>
+                <div id="pictures-grid" class="pictures-grid"></div>
+
+            </div>
+
+            <!--Right side Profile Card-->
+            <div class="dashboard-card profile-card">
+                <div class="card-header">
+                    <span>Profile</span>
+                </div>
+                <div class="profile-content">
+                    @{
+                        var role = (ViewBag.Role as string) ?? "Staff";
+                        var iconClass = role == "Admin" ? "bi-shield-lock-fill" : "bi-person-workspace";
+                        var colorClass = role == "Admin" ? "text-primary" : "text-secondary";
+                    }
+                    <div class="profile-left d-flex align-items-center gap-2">
+                        <div class="rounded-circle  border shadow-sm d-flex align-items-center justify-content-center"
+                                style="width:140px; height:140px;">
+                            <i class="bi @iconClass @colorClass fs-1" aria-hidden="true" style="font-size:3.25rem;"></i>
+                        </div>
+
+                        <div class="profile-name fw-semibold">@ViewBag.Name</div>
+                    </div>
+
+                    <div class="profile-info">
+                        <div class="profile-row">
+                            <i class="bi bi-person-badge-fill text-primary"></i>
+                            <span>@ViewBag.Role</span>
+                        </div>
+                        <div class="profile-row">
+                            <i class="bi bi-envelope text-primary"></i>
+                            <span>@ViewBag.Email</span>
+                        </div>
+                        <div class="profile-row">
+                            <i class="bi bi-telephone text-primary"></i>
+                            <span>@ViewBag.Phone</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    <div class="dashboard-row bottom-row">
+        <div class="dashboard-card performance-card">
+            <div class="card-header">
+                <div class="d-flex align-items-center mb-3" style="width: 100%;">
+                    <span class="fw-semibold me-auto">Performance Report</span>
+                </div>
+            </div>
+            <div class="performance-chart" style="height: 340px;">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+
+
+        document.addEventListener('DOMContentLoaded', async function () {
+          const grid = document.getElementById('pictures-grid');
+          if (!grid) return;
+
+          // Optionally show a lightweight skeleton
+          grid.innerHTML = '<div style="opacity:.4">Loading...</div>';
+
+          let images = [];
+          try {
+            const res = await fetch('/Home/GetRandomPictures?count=4', { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
+            if (res.ok) {
+              const data = await res.json();
+              images = data.images || [];
+            }
+          } catch (_) {
+            // ignore, we'll fall back
+          }
+
+          if (!images.length) {
+            images = [
+              '/uploads/sample1.jpg',
+              '/uploads/sample2.jpg',
+              '/uploads/sample3.jpg',
+              '/uploads/sample4.jpg'
+            ];
+          }
+
+          grid.innerHTML = '';
+          images.forEach((src, i) => {
+            const img = new Image();
+            img.loading = 'lazy';
+            img.alt = `360 pic ${i+1}`;
+            img.src = src;
+            grid.appendChild(img);
+          });
+        });
+
+
+        document.querySelector('.logout-btn').addEventListener('click', function () {
+            // Optionally clear frontend sessionStorage
+            sessionStorage.clear();
+
+            // Redirect to backend logout route
+            window.location.href = '/Auth/Logout';
+        });
+
+        async function loadPerformanceChart() {
+            const res = await fetch('/Home/GetPerformanceData');
+            const data = await res.json();
+            const months = [];
+            const counts = [];
+            const now = new Date();
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                months.push(m);
+                const found = data.find(x => x.month === m);
+                counts.push(found ? found.count : 0);
+            }
+
+            let max = Math.max(...counts);
+            if (max < 2) max = 2; else max += 2;
+
+            new Chart(document.getElementById('performanceChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Scenes visited',
+                        data: counts,
+                        borderColor: 'rgba(13, 110, 253, 1)',
+                        backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                        pointBackgroundColor: 'rgba(13, 110, 253, 1)',
+                        pointRadius: 7,
+                        pointHoverRadius: 10,
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.parsed.y} Scenes visited`
+                            },
+                            backgroundColor: '#fff',
+                            titleColor: '#222',
+                            bodyColor: 'rgba(13, 110, 253, 1)',
+                            borderColor: '#eee',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: max,
+                            ticks: { stepSize: 1, color: '#222', font: { size: 16 } },
+                            grid: { color: '#f0f0f0' }
+                        },
+                        x: {
+                            ticks: { color: '#222', font: { size: 16 } },
+                            grid: { color: '#f0f0f0' }
+                        }
+                    }
+                }
+            });
+        }
+        loadPerformanceChart();
+    </script>
+}

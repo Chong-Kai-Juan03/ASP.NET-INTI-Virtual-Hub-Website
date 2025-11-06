@@ -1,0 +1,890 @@
+@{
+    ViewData["Title"] = "Manage 360° Scene Pictures";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Content {
+<div class="manage360-container">
+    <div class="header-section">
+        <h1>Manage 360° Scene Pictures</h1>
+        <p class="subtitle">Organize and manage 360° images across INTI Penang buildings</p>
+
+        <!-- First container show the each number for each level-->
+        <div class="stats-container" id="levelStats">
+            <!-- Total -->
+            <div class="stat-item">
+                <span class="stat-number counter" id="totalScenes" data-target="0">0</span>
+                <span class="stat-label">Total Scenes</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-number counter" id="level2Scenes" data-target="0">0</span>
+                <span class="stat-label">Level 2</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-number counter" id="level3Scenes" data-target="0">0</span>
+                <span class="stat-label">Level 3</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-number counter" id="level4Scenes" data-target="0">0</span>
+                <span class="stat-label">Level 4</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-number counter" id="level5Scenes" data-target="0">0</span>
+                <span class="stat-label">Level 5</span>
+            </div>
+
+            <div class="stat-item">
+                <span class="stat-number counter" id="level6Scenes" data-target="0">0</span>
+                <span class="stat-label">Level 6</span>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Search & Filter Card -->
+    <div class="filter-section">
+        <div class="filter-header">
+            <i class="bi bi-funnel"></i>
+            <span>Filters & Search</span>
+        </div>
+
+        <div class="filter-row d-flex align-items-center flex-wrap gap-2">
+            <div class="search-box d-flex align-items-center">
+                <i class="bi bi-search me-2"></i>
+                <input type="text" placeholder="Search scenes..." class="form-control" style="min-width: 200px;">
+            </div>
+
+            <div class="dropdown filter-box">
+                <button class="btn dropdown-toggle" type="button" id="buildingDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    All Buildings
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="buildingDropdown">
+                    <li><a class="dropdown-item" href="#">All Buildings</a></li>
+                    <li><a class="dropdown-item" href="#">INTI Penang</a></li>
+                    <li><a class="dropdown-item" href="#">USAINS</a></li>
+                </ul>
+            </div>
+
+            <div class="dropdown filter-box">
+                <button class="btn dropdown-toggle" type="button" id="levelDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    All Levels
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="levelDropdown">
+                    <li><a class="dropdown-item" href="#">All Levels</a></li>
+                    <li><a class="dropdown-item" href="#">Level 2</a></li>
+                    <li><a class="dropdown-item" href="#">Level 3</a></li>
+                    <li><a class="dropdown-item" href="#">Level 4</a></li>
+                    <li><a class="dropdown-item" href="#">Level 5</a></li>
+                    <li><a class="dropdown-item" href="#">Level 6</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="active-filters" style="display: none;">
+            <span>Active filters:</span>
+            <div class="filter-tags" id="filter-tags"></div>
+            <a href="#" class="clear-all">Clear All</a>
+        </div>
+    </div>
+
+
+    <ul class="nav nav-tabs custom-tab-switcher mb-3" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active tab-button" data-view="grid" type="button">
+                <i class="bi bi-grid"></i> Grid View
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link tab-button" data-view="buildings" type="button">
+                <i class="bi bi-building-fill"></i> By Buildings
+            </button>
+        </li>
+    </ul>
+
+
+    <!-- Grid View content -->
+    <div id="grid-view" class="view-content active">
+        <div class="scene-grid" id="sceneGrid"></div>
+    </div>
+
+
+    <!-- BY BUILDINGS VIEW -->
+    <div id="buildings-view" class="view-content" style="display: none;">
+            <div class="buildings-container" id="buildingsContainer">
+            <!-- Grouped by Building and Level (will also be filled dynamically later) -->
+        </div>
+    </div>
+
+
+    <!-- Edit Scene Modal -->
+    <div class="modal fade" id="editSceneModal" tabindex="-1" aria-labelledby="editSceneModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editSceneModalLabel">
+                    <i class="bi bi bi-building-fill text-primary"></i> Edit 360° Scene
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <p class="text-muted mb-4">Update scene information and manage 360° images</p>
+
+                    <!-- Editable Information -->
+                    <div class="card mb-4 rounded-3 p-3">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="bi bi-pencil-square text-success"></i>
+                            <span class="fw-semibold">Editable Information</span>
+                        </div>
+                        <div class="card-body pt-2 px-0">
+                            <div class="mb-3">
+                                <label class="form-label">Scene Title</label>
+                                <input type="text" class="form-control" id="modalSceneTitle">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Person In-charge</label>
+                                <input type="text" class="form-control" id="modalPersonInCharge">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location Information (Read-only) -->
+                    <div class="card mb-4 rounded-3 p-3">
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                            <i class="bi bi-lock text-warning"></i>
+                            <span class="fw-semibold">Location Information (Read-only)</span>
+                        </div>
+                        <div class="card-body pt-2 px-0">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Building</label>
+                                    <input type="text" class="form-control" id="modalBuilding" readonly>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Level</label>
+                                    <input type="text" class="form-control" id="modalLevel" readonly>
+                    <input type="hidden" id="modalSceneId" />
+                    <input type="hidden" id="modalOldS3Key" />
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <!-- Current Picture -->
+                    <div class="card mb-4 rounded-3 p-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="fw-semibold">Current Picture</span>
+                        </div>
+
+                        <div class="card-body text-center">
+                                <img id="modalImageUrl" class="img-fluid rounded border-dashed" style="max-height: 300px;" alt="Current scene image">
+                            <div class="mt-2">
+                                <small class="text-muted" id="modalCurrentImageText"></small><br>
+                                <small class="text-muted" id="modalLocationText"></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload New Picture -->
+                    <div class="card mb-4 rounded-3 p-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="fw-semibold">Upload New Picture</span>
+                        </div>
+
+                        <div class="card-body">
+                            <!-- Dashed Upload Box -->
+                            <div class="p-4 text-center bg-light border-dashed rounded-3" id="uploadBox">
+                                <div id="uploadPrompt">
+                                    <p class="mb-1 fw-semibold">Drop your 360° image here</p>
+                                    <p class="text-muted small mb-3">Or click to browse files</p>
+
+                                    <!-- Hidden file input -->
+                                    <input type="file" id="newImageInput" accept="image/*" style="display: none;" />
+
+                                    <!-- Button to trigger file input -->
+                                    <button class="btn btn-outline-secondary" onclick="document.getElementById('newImageInput').click();">
+                                        <i class="bi bi-upload"></i> Select Image
+                                    </button>
+                                </div>
+
+                                <!-- Preview image and file info -->
+                                <div class="mt-0">
+                                    <img id="imagePreview"
+                                            class="w-100 h-100 object-fit-cover rounded border mb-0"
+                                            style="max-height: 300px; display: none; border-style: dashed;"
+                                            alt="Preview">
+                                </div>
+                                <p id="selectedFileInfo" class="text-muted small mb-0 mt-2 text-center"></p>
+                                    <button id="clearImageBtn" type="button" class="btn btn-sm btn-outline-danger py-0 px-2" title="Clear image" style="display: none;">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                   <!-- Guidelines & Information -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 bg-light bg-opacity-25">
+                                <div class="card-header bg-primary bg-opacity-10 text-primary">
+                                    <i class="bi bi-info-circle"></i> 360° Image Guidelines
+                            </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2"><strong>Formats:</strong> JPG, PNG only</li>
+                                        <li class="mb-2"><strong>Aspect Ratio:</strong> 2:1 (panoramic)</li>
+                                        <li class="mb-2"><strong>File Size:</strong> Maximum 10MB</li>
+                                        <li><strong>Resolution:</strong> Minimum 4096x2048 pixels</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 bg-light bg-opacity-25">
+                                <div class="card-header bg-warning bg-opacity-10 text-warning">
+                                    <i class="bi bi-exclamation-triangle"></i> Important Information
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2">Building location cannot be changed</li>
+                                        <li class="mb-2">Level/Floor assignment is locked</li>
+                                        <li class="mb-2">Category classification is fixed</li>
+                                        <li>Contact administrator for location changes</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    <div class="modal-content" style="position: relative;">
+                        <!-- NEW overlay -->
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="saveBtn">Save</button>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+}
+
+@section Scripts {
+    <script>
+        // Pass which button is the "active" one so it gets the spinner.
+        // Works with a single Save button (#saveBtn). Scopes to the modal so we don't miss elements.
+        function setSavingState(modalEl, isSaving, { activeBtn = null, inputsToDisable = [] } = {}) {
+          if (!modalEl) return;
+          // Find controls inside THIS modal only
+          const cancelBtn = modalEl.querySelector('.modal-footer .btn-outline-secondary');
+          const saveBtn   = modalEl.querySelector('#saveBtn');
+          const closeBtn  = modalEl.querySelector('.btn-close');
+
+          const buttons = [cancelBtn, saveBtn, closeBtn].filter(Boolean);
+          const fields  = inputsToDisable.map(id => modalEl.querySelector('#' + id)).filter(Boolean);
+
+          if (isSaving) {
+            [...buttons, ...fields].forEach(el => { el.disabled = true; });
+
+            if (activeBtn) {
+              if (!activeBtn.dataset.originalHtml) activeBtn.dataset.originalHtml = activeBtn.innerHTML;
+              activeBtn.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Working…`;
+            }
+          } else {
+            [...buttons, ...fields].forEach(el => { el.disabled = false; });
+
+            // restore any button we changed
+            [cancelBtn, saveBtn, closeBtn].forEach(btn => {
+              if (btn?.dataset?.originalHtml) {
+                btn.innerHTML = btn.dataset.originalHtml;
+                delete btn.dataset.originalHtml;
+              }
+            });
+          }
+        }
+
+
+
+
+        /**
+         * Best‑effort download for public files.
+         * NOTE: for cross‑origin files, browsers may ignore `download` unless the
+         * server sets Content‑Disposition: attachment. For private S3 use a presigned URL.
+         */
+        function downloadUrl(url, filename = 'old-scene.jpg') {
+          if (!url) return;
+
+          // Try to derive a filename from the URL, fall back to provided default
+          const name = (url.split('/').pop() || filename).split('?')[0];
+
+          // Temporary <a> trick to trigger a download/open
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = name || filename;
+          a.target = '_blank'; // opens in new tab if browser ignores `download`
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+
+
+
+        /**
+         * Build FormData with fields your controller expects.
+         * Set includeFile=false when you want to send metadata‑only.
+         */
+        function buildCommonFormData(includeFile = true) {
+          const fd = new FormData();
+
+          // Image file (optional)
+          if (includeFile) {
+            const file = document.getElementById('newImageInput')?.files?.[0];
+            if (file) fd.append("imageFile", file);
+          }
+
+          // Scene fields (always include)
+          fd.append("sceneId",        document.getElementById('modalSceneId').value || "");
+          fd.append("building",       document.getElementById('modalBuilding').value || "");
+          fd.append("level",          document.getElementById('modalLevel').value || "");
+          fd.append("sceneTitle",     document.getElementById('modalSceneTitle').value || "");
+          fd.append("personInCharge", document.getElementById('modalPersonInCharge').value || "");
+
+          return fd;
+        }
+
+
+
+
+    (function () {
+        const saveBtn = document.getElementById('saveBtn');
+        const modalEl = document.getElementById('editSceneModal');
+        const inputsToDisable = [
+        'modalSceneTitle',
+        'modalPersonInCharge',
+        'modalBuilding',
+        'modalLevel',
+        'newImageInput'
+        ];
+
+        saveBtn?.addEventListener('click', async function () {
+        const sceneTitle   = document.getElementById('modalSceneTitle')?.value?.trim() || 'Untitled Scene';
+        const oldImageUrl  = document.getElementById('modalImageUrl')?.src || '';
+        const oldS3Key     = document.getElementById('modalOldS3Key')?.value || '';
+        const file         = document.getElementById('newImageInput')?.files?.[0];
+
+        const fd = new FormData();
+        fd.append('sceneId',        document.getElementById('modalSceneId').value || '');
+        fd.append('building',       document.getElementById('modalBuilding').value || '');
+        fd.append('level',          document.getElementById('modalLevel').value || '');
+        fd.append('sceneTitle',     sceneTitle);
+        fd.append('personInCharge', document.getElementById('modalPersonInCharge').value || '');
+        fd.append('oldImageUrl',    oldImageUrl);
+        fd.append('oldS3Key',       oldS3Key);
+        if (file) fd.append('imageFile', file);
+
+        setSavingState(modalEl, true, { activeBtn: saveBtn, inputsToDisable });
+
+         // First: Download the old-image before delete
+        if (file && oldS3Key) {
+          try {
+            const u = await fetch(`/Scene/GetDownloadUrl?key=${encodeURIComponent(oldS3Key)}`);
+            if (u.ok) {
+              const { url } = await u.json();
+              const a = document.createElement('a');
+              a.href = url;
+              a.target = '_blank';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            }
+          } catch (e) {
+            console.warn('Could not download old image:', e);
+          }
+        }
+
+
+        try {
+            const res = await fetch('/Scene/ReplaceSceneImage', { method: 'POST', body: fd });
+            const raw = await res.text();
+            let payload = {};
+            try { payload = JSON.parse(raw); } catch {}
+
+            // if upload failed or backend returned error
+            if (!res.ok || payload?.success !== true) {
+            throw new Error(payload?.message || `HTTP ${res.status}`);
+            }
+
+            // success message
+            alert(`The Scene "${sceneTitle}" is successfully updated!`);
+
+            // reset UI
+            setSavingState(modalEl, false, { inputsToDisable });
+
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modalEl.addEventListener('hidden.bs.modal', () => {
+            if (typeof loadGridView === 'function') loadGridView();
+            else location.reload();
+            }, { once: true });
+            modal.hide();
+
+        } catch (err) {
+            console.error('Save error:', err);
+
+            // failure message
+            alert(`The update for the Scene "${sceneTitle}" has failed.\n\nError: ${err.message || 'Unknown error occurred.'}`);
+
+            // optional rollback request (see below)
+            try {
+            await fetch('/Scene/RollbackSceneUpdate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sceneTitle, oldS3Key, oldImageUrl })
+            });
+            } catch (rollbackErr) {
+            console.warn('Rollback also failed:', rollbackErr);
+            }
+
+        } finally {
+            setSavingState(modalEl, false, { inputsToDisable });
+        }
+        });
+    })();
+
+
+
+    // This is the JS function show the counting effect on the UI
+    function animateCountUp(el, target) {
+        const duration = 1000;
+        const frameRate = 60;
+        const totalFrames = Math.round(duration / (1000 / frameRate));
+        const increment = target / totalFrames;
+        let current = 0;
+
+        const counter = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                current = target;
+                clearInterval(counter);
+            }
+            el.textContent = Math.floor(current);
+        }, 1000 / frameRate);
+    }
+
+
+    fetch('/Scene/GetSceneCounts')
+        .then(res => res.json())
+        .then(data => {
+            // Animate totals
+            animateCountUp(document.getElementById('totalScenes'), data.total);
+            animateCountUp(document.getElementById('intiScenes'), data.inti);
+
+            // Map Firebase level names to HTML IDs
+            const levelMap = {
+                "Level 2": "level2Scenes",
+                "Level 3": "level3Scenes",
+                "Level 4": "level4Scenes",
+                "Level 5": "level5Scenes",
+                "Level 6": "level6Scenes"
+            };
+
+            // Update counts for each level
+            for (const [level, count] of Object.entries(data.levels)) {
+                const elementId = levelMap[level];
+                if (elementId) {
+                    const el = document.getElementById(elementId);
+                    if (el) animateCountUp(el, count);
+                }
+            }
+        })
+        .catch(err => console.error("Failed to fetch scene counts", err));
+
+
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+          const viewContents = document.querySelectorAll('.view-content');
+
+          // Use event delegation so it works even if buttons are added later
+          document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.tab-button');
+            if (!btn) return;
+
+            // toggle active class on tabs
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const view = btn.dataset.view; // "grid" or "buildings"
+            // hide all, show selected
+            viewContents.forEach(el => el.style.display = 'none');
+            const selected = document.getElementById(`${view}-view`);
+            if (selected) {
+              selected.style.display = 'block';
+            } else {
+              console.warn('[Tabs] no view element for:', view);
+              return;
+            }
+
+            // Call the appropriate loader
+            if (view === 'grid') {
+              if (typeof window.loadGridView === 'function') {
+                window.loadGridView();
+              } else {
+                console.warn('loadGridView is not defined on window');
+              }
+            } else if (view === 'buildings') {
+              if (typeof window.loadBuildingsView === 'function') {
+                window.loadBuildingsView();
+              } else {
+                console.warn('loadBuildingsView is not defined on window');
+              }
+            }
+          });
+
+          // Default view on first load
+          if (typeof window.loadGridView === 'function') {
+            window.loadGridView();
+          } else {
+            console.warn('loadGridView is not defined on window (initial load)');
+          }
+        });
+
+
+        // This is the Function to load CARD to the website
+        // This function also do the fetch/GetAllScenes from SceneController.cs, get all scene from firebase
+        function loadGridView() {
+            fetch('/Scene/GetAllScenes')
+                .then(response => response.json())
+                .then(scenes => {
+                    console.log(" Scenes loaded:", scenes);
+
+                    const grid = document.getElementById('sceneGrid');
+                    grid.innerHTML = '';
+
+                    if (!scenes.length) {
+                        grid.innerHTML = "<p class='text-muted'>No scenes found.</p>";
+                        return;
+                    }
+
+                    scenes.forEach(scene => {
+                        const card = `
+                        <div class="card-container">
+                            <div class="card shadow-sm">
+                                <div class="position-relative" style="height: 180px; background: #f0f0f0;">
+                                    <img src="${scene.imageUrl}" alt="Scene Image" class="card-img-top h-100" style="object-fit: cover;">
+
+                                    <!-- Left badge -->
+                                    <span class="badge bg-primary position-absolute top-0 start-0 m-2">
+                                        ${scene.level ?? ''}
+                                    </span>
+
+                                    <!-- Right edit button -->
+                                    <a href="#"
+                                       class="btn btn-primary btn-sm position-absolute top-0 end-0 m-2 edit-btn"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#editSceneModal"
+                                       data-scene='${encodeURIComponent(JSON.stringify({...scene, sceneId: scene.sceneId || ""}))}'
+                                       <i class="bi bi-pencil"></i> Edit
+                                    </a>
+
+
+                                </div>
+
+
+                                <div class="card-body">
+                                    <h5 class="card-title mb-4">${scene.sceneTitle ?? 'Untitled Scene'}</h5>
+                                    <p class="card-text text-muted mb-1">
+                                        <i class="bi bi-geo-alt"></i> ${scene.building ?? 'Unknown'}
+                                        <i class="bi bi-tag ms-2"></i> ${scene.level ?? ''}
+                                    </p>
+                                    <p class="card-text text-muted small">
+                                        Updated ${scene.lastUpdate?.split('T')[0] ?? 'N/A'} by ${scene.personInCharge ?? 'N/A'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>`;
+
+                        grid.insertAdjacentHTML('beforeend', card);
+                    });
+                })
+                .catch(err => console.error(" Failed to load scenes:", err));
+        }
+
+
+
+
+
+        // Expose globally so tabs can call it
+        // Keep the same look & feel; just target the buildings container and fix small bugs.
+        window.loadBuildingsView = function loadBuildingsView() {
+          // render into the Buildings tab, not the Grid tab
+          const grid = document.querySelector('#buildings-view .buildings-container');
+          if (!grid) {
+            console.warn('[Buildings] container not found');
+            return;
+          }
+
+          grid.innerHTML = "<p class='text-muted p-3 m-0'>Loading…</p>";
+
+          Promise.all([
+            fetch('/Scene/GetAllScenes').then(res => res.json()),
+            fetch('/Scene/GetSceneCounts').then(res => res.json())
+          ])
+            .then(([scenes, counts]) => {
+              console.log("Scenes and counts loaded:", scenes, counts);
+
+              grid.innerHTML = '';
+
+              if (!Array.isArray(scenes) || scenes.length === 0) {
+                grid.innerHTML = "<p class='text-muted'>No scenes found.</p>";
+                return;
+              }
+
+              // group by building → level
+              const buildings = {};
+              scenes.forEach(scene => {
+                const building = (scene.building || 'Unknown').trim();
+                const levelRaw = (scene.level || 'Unknown').trim();
+                // avoid "Level Level 6" if level already contains the word
+                const level = /^level\s+/i.test(levelRaw) ? levelRaw : levelRaw;
+
+                buildings[building] ||= {};
+                buildings[building][level] ||= [];
+                buildings[building][level].push(scene);
+              });
+
+              // render
+              for (const [building, levels] of Object.entries(buildings)) {
+                const buildingTotal =
+                  (counts && typeof counts === 'object' && counts[building] != null)
+                    ? counts[building]
+                    : Object.values(levels).flat().length;
+
+                // Building header (same style)
+                const buildingHeader = `
+                  <div class="building-header mt-4 mb-3">
+                        <i class="bi bi-building-fill fs-4 text-primary"></i>
+                    <h3 class="d-inline-block me-2">${building}</h3>
+                    <span class="badge bg-primary">${buildingTotal} scenes</span>
+                  </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', buildingHeader);
+
+                // Levels
+                for (const [level, levelScenes] of Object.entries(levels)) {
+                  const levelHeader = `
+                    <div class="level-header mt-3 mb-2">
+                      <h5 class="d-inline-block me-2">${level}</h5>
+                      <span class="text-muted">${levelScenes.length} scenes</span>
+                    </div>
+                    <div class="level-scenes row row-cols-1 row-cols-md-3 g-4 mb-4">
+                  `;
+                  grid.insertAdjacentHTML('beforeend', levelHeader);
+
+                  // Scene cards (unchanged style; just fixed the Edit anchor tag)
+                  levelScenes.forEach(scene => {
+                    const card = `
+                      <div class="col">
+                        <div class="card shadow-sm h-100 mb-4">
+                          <div class="position-relative" style="height: 180px; background: #f0f0f0;">
+                            <img src="${scene.imageUrl || ''}" alt="Scene Image"
+                                 class="card-img-top h-100" style="object-fit: cover;"
+                                 onerror="this.src=''; this.style.display='none'">
+
+                            <!-- Right edit button -->
+                            <a href="#"
+                               class="btn btn-primary btn-sm position-absolute top-0 end-0 m-2 edit-btn"
+                               data-bs-toggle="modal"
+                               data-bs-target="#editSceneModal"
+                               data-scene='${encodeURIComponent(JSON.stringify({ ...scene, sceneId: scene.sceneId || "" }))}'>
+                              <i class="bi bi-pencil"></i> Edit
+                            </a>
+                          </div>
+
+                          <div class="card-body">
+                            <h5 class="card-title mb-2">${scene.sceneTitle || 'Untitled Scene'}</h5>
+                            <p class="card-text text-muted small">
+                              Updated ${(scene.lastUpdate || '').split('T')[0] || 'N/A'} by ${scene.personInCharge || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                    grid.insertAdjacentHTML('beforeend', card);
+                  });
+
+                  // close level-scenes row
+                  grid.insertAdjacentHTML('beforeend', '</div>');
+                }
+              }
+            })
+            .catch(err => {
+              console.error("Failed to load scenes or counts:", err);
+              grid.innerHTML = `
+                <div class="alert alert-danger m-3">
+                  Failed to load buildings view. ${err?.message || ''}
+                </div>
+              `;
+            });
+        };
+
+
+        
+
+
+
+
+
+
+
+
+        // This segement of code is handle after Clicked the edit button
+        document.addEventListener('click', function (e) {
+          if (e.target.closest('.edit-btn')) {
+            const button = e.target.closest('.edit-btn');
+            const sceneData = button.getAttribute('data-scene');
+            if (sceneData) {
+              const scene = JSON.parse(decodeURIComponent(sceneData));
+              console.log("Selected scene for edit:", scene);
+              setEditModalData(scene); //the bridge between your button click and modal population.
+              // This is hidden input, but this is require cuz it let the backend knows which scene is being edited
+              document.getElementById('modalSceneId').value = scene.sceneId || '';
+            }
+          }
+        });
+
+
+        function fallbackKeyFromUrl(url, building, level) {
+          try {
+            const u = new URL(url);
+            const file = decodeURIComponent(u.pathname.split('/').pop() || '');
+            const b = (building || 'Inti-Penang').trim().replace(/^\/|\/$/g, '');
+            const l = (level || 'Unassigned').trim().replace(/^\/|\/$/g, '');
+            // e.g. "INTI-Penang/Level 6/Level 6 Center A.jpg"
+            return `${b}/${l}/${file}`;
+          } catch {
+            return '';
+          }
+        }
+
+        // This is fucntion set data fetch from the loadGridView() and set to the column
+        function setEditModalData(scene) {
+          console.log("Selected scene for edit:", scene);
+
+          // Populate text fields
+          document.getElementById('modalSceneTitle').value      = scene.sceneTitle || '';
+          document.getElementById('modalPersonInCharge').value  = scene.personInCharge || '';
+          document.getElementById('modalBuilding').value        = scene.building || '';
+          document.getElementById('modalLevel').value           = scene.level || '';
+
+          // Image preview
+          const img = document.getElementById('modalImageUrl');
+          img.src  = scene.imageUrl || '';
+          img.alt  = `Image for ${scene.sceneTitle || 'Scene'}`;
+
+          document.getElementById('modalCurrentImageText').textContent = scene.sceneTitle || 'No Title';
+          document.getElementById('modalLocationText').textContent     = `${scene.building || ''} • ${scene.level || ''}`;
+
+          // set the exact S3 key for downloads/deletes
+          // Prefer the stored s3Key; if missing, reconstruct from URL + building + level
+          const s3Key = scene.s3Key && scene.s3Key.includes('/')
+            ? scene.s3Key
+            : fallbackKeyFromUrl(scene.imageUrl, scene.building, scene.level);
+
+          document.getElementById('modalOldS3Key').value = s3Key || '';
+
+          // Debug so you can verify the path immediately
+          console.log('[EditModal] modalOldS3Key =', document.getElementById('modalOldS3Key').value);
+        }
+
+
+    // Handle the preview Image Event
+    function setupImageUploadPreview() {
+        const fileInput     = document.getElementById('newImageInput');
+        const previewImg    = document.getElementById('imagePreview');
+        const fileInfo      = document.getElementById('selectedFileInfo');
+        const uploadPrompt  = document.getElementById('uploadPrompt');
+        const clearBtn      = document.getElementById('clearImageBtn');
+        const modalEl       = document.getElementById('editSceneModal');
+
+        if (!fileInput || !previewImg || !fileInfo || !uploadPrompt || !clearBtn) {
+            console.warn("Some image upload preview elements are missing.");
+            return;
+        }
+
+        // Handle image selection
+        fileInput.addEventListener('change', function () {
+            const file = this.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                };
+
+                reader.readAsDataURL(file);
+
+                // Show file info
+                const sizeKB = (file.size / 1024).toFixed(1);
+                const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+                const sizeText = file.size >= 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+
+                fileInfo.textContent = `Selected: ${file.name} (${sizeText})`;
+                uploadPrompt.style.display = 'none';
+                clearBtn.style.display = 'inline-block'; // Show the trash icon
+            } else {
+                resetImagePreview();
+            }
+        });
+
+        // Clear button (trash bin)
+        clearBtn.addEventListener('click', function () {
+            resetImagePreview();
+        });
+
+        function resetImagePreview() {
+            fileInput.value = '';
+            previewImg.src = '#';
+            previewImg.style.display = 'none';
+            fileInfo.textContent = '';
+            uploadPrompt.style.display = 'block';
+            clearBtn.style.display = 'none';
+            }
+            // ——— Auto-reset when modal closes (Cancel or ✖️) ———
+          // Works with Bootstrap 5
+          if (modalEl) {
+            modalEl.addEventListener('hidden.bs.modal', () => {
+              resetImagePreview();
+            });
+
+            // Optional: also start fresh whenever the modal opens
+            modalEl.addEventListener('show.bs.modal', () => {
+              resetImagePreview();
+            });
+          }
+        }
+
+        // Run once the page is loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            setupImageUploadPreview();
+    });
+
+      
+
+    </script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="@Url.Content("~/js/manage360.js")"></script>
+
+
+}

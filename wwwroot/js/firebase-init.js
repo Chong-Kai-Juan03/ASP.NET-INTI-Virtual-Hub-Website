@@ -1,15 +1,20 @@
+//// Import the functions you need from the SDKs you need
+//import { initializeApp } from "firebase/app";
+//import { getAnalytics } from "firebase/analytics";
+//// TODO: Add SDKs for Firebase products that you want to use
+//// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Firebase配置
-const firebaseConfig = {
-  apiKey: "your_api_key",
-  authDomain: "vr360management.firebaseapp.com",
-  databaseURL: "https://vr360management-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "vr360management",
-  storageBucket: "vr360management.firebasestorage.app",
-  messagingSenderId: "143809080267",
-  appId: "1:143809080267:web:41206f3b2489694004244e",
-  measurementId: "G-F5KK63RJ4Z"
-};
+//// web app's Firebase configuration
+//// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+//const firebaseConfig = {
+//    authDomain: "intipenangvr.firebaseapp.com",
+//    projectId: "intipenangvr",
+//    storageBucket: "intipenangvr.firebasestorage.app",
+//    messagingSenderId: "765888370139",
+//    appId: "1:765888370139:web:9f1f56d23b3604d5b683fe",
+//    measurementId: "G-24SCP364RP"
+//};
 
-// 初始化Firebase
-firebase.initializeApp(firebaseConfig);
+//// Initialize Firebase
+//const app = initializeApp(firebaseConfig);
+//const analytics = getAnalytics(app);
