@@ -36,9 +36,9 @@ This dashboard works together with the Unity WebGL project linked above.
 |-----------|-----------------|
 | **Framework** | ASP.NET Core MVC (.NET 6/7) |
 | **Frontend** | Razor Pages, Bootstrap, JavaScript |
-| **Backend** | C#, Firebase Realtime Database |
+| **Backend** | C# |
 | **Hosting** | Azure App Service / Docker |
-| **Storage** | AWS S3 Bucket |
+| **Storage** | AWS S3 Bucket, Firebase Realtime Database |
 | **Version Control** | Git & GitHub |
 
 ---
