@@ -23,8 +23,8 @@ This dashboard works together with the Unity WebGL project linked above.
 ✅ **Firebase Integration** – Reads and writes scene data, upload links, and metadata.  
 ✅ **Cloud Storage Uploads** – Upload 360° images directly to AWS S3 Bucket.  
 ✅ **User Authentication** – Simple session-based login for admin and staff.  
-✅ **Dynamic Scene Management** – Add, edit, delete, and update tour scenes in real time.  
-✅ **Statistics Dashboard** – Visualize scene view counts, uploads, and user activity.  
+✅ **Dynamic Scene Management** – Edit and update tour scenes in real time.  
+✅ **Statistics Dashboard** – Visualize scene view counts and Scene Trend activity.  
 ✅ **ASP.NET MVC Architecture** – Organized in `Controllers`, `Models`, `Views`, and `Services`.  
 ✅ **Docker Support** – Includes Dockerfile for containerized deployment.  
 
